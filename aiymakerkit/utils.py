@@ -27,6 +27,12 @@ UDP_PORT = 5005
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+"""
+Coral → PiCar UDP sender
+
+Runs in the Coral Python 3.9 virtual environment.
+Publishes object detections over localhost using UDP + JSON.
+"""
 def send_detections(objects, frame_id):
     """
     objects: list of dicts
