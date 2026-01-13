@@ -34,7 +34,12 @@ system image for Raspberry Pi. Otherwise, run download_models.sh in this directo
 """
 
 import os.path
+import sys
 import argparse
+
+# Add parent directory to path so we can import ipc module
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from aiymakerkit import vision
 from aiymakerkit import utils
 from ipc.udp import UdpDetectionSender
