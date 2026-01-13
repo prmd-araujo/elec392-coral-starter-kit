@@ -50,6 +50,7 @@ system image for Raspberry Pi. Otherwise, run download_models.sh in this directo
 
 import os.path
 import argparse
+import time
 from aiymakerkit import vision
 from aiymakerkit import utils
 
@@ -131,32 +132,45 @@ def main():
     print(f"Press Ctrl+C to stop\n")
     
     frame_id = 0
+    last_print_time = time.time()
     
     # Choose display mode based on flags
     display_mode = not args.headless
+    
+    print(f"Starting frame loop...")
     
     try:
         # Get frames with or without display
         for frame in vision.get_frames(display=display_mode):
             try:
+                start_time = time.time()
+                
                 # Detect objects with specified confidence threshold
                 objects = detector.get_objects(frame, threshold=args.confidence)
+                detect_time = time.time() - start_time
                 
                 # Draw detections only if display is on and --no-draw is not set
                 if display_mode and not args.no_draw:
                     vision.draw_objects(frame, objects, labels=labels, color=(0, 255, 0), thickness=2)
                 
-                # Print summary every 10 frames
-                if frame_id % 10 == 0:
-                    print(f"Frame {frame_id}: {len(objects)} objects detected")
-                    for obj in objects:
-                        label = labels.get(obj.id, "unknown")
-                        print(f"  - {label}: {obj.score:.2f}")
+                # Print summary every 1 second
+                current_time = time.time()
+                if current_time - last_print_time >= 1.0:
+                    print(f"Frame {frame_id}: {len(objects)} objects | Detection: {detect_time*1000:.1f}ms")
+                    if objects:
+                        for obj in objects:
+                            label = labels.get(obj.id, "unknown")
+                            print(f"  - {label}: {obj.score:.2f}")
+                    last_print_time = current_time
                 
                 frame_id += 1
+                
+            except KeyboardInterrupt:
+                raise
             except Exception as e:
                 # Skip frames with errors and continue
-                print(f"Error processing frame: {e}")
+                print(f"Error processing frame {frame_id}: {e}")
+                frame_id += 1
                 continue
         
     except KeyboardInterrupt:
