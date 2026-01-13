@@ -36,6 +36,7 @@ system image for Raspberry Pi. Otherwise, run download_models.sh in this directo
 import os.path
 import sys
 import argparse
+import time
 
 # Add parent directory to path so we can import ipc module
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -149,26 +150,41 @@ def main():
     print(f"Press Ctrl+C to stop\n")
     
     frame_id = 0
+    last_print_time = time.time()
     
     try:
-        # Run a loop to get images and process them in real-time
-        for frame in vision.get_frames():
-            # Detect objects with specified confidence threshold
-            objects = detector.get_objects(frame, threshold=args.confidence)
-            
-            # Format detections for UDP transmission
-            detections = format_detections(objects, width, height)
-            
-            # Send detections over UDP
-            sender.send(detections, frame_id)
-            
-            # Print summary
-            if frame_id % 10 == 0:  # Print every 10 frames
-                print(f"Frame {frame_id}: {len(detections)} objects detected")
-                for det in detections:
-                    print(f"  - {det['label']}: {det['score']}")
-            
-            frame_id += 1
+        # Run without display (headless mode for UDP transmission)
+        for frame in vision.get_frames(display=False):
+            try:
+                start_time = time.time()
+                
+                # Detect objects with specified confidence threshold
+                objects = detector.get_objects(frame, threshold=args.confidence)
+                detect_time = time.time() - start_time
+                
+                # Format detections for UDP transmission
+                detections = format_detections(objects, width, height)
+                
+                # Send detections over UDP
+                sender.send(detections, frame_id)
+                
+                # Print summary every 1 second
+                current_time = time.time()
+                if current_time - last_print_time >= 1.0:
+                    print(f"Frame {frame_id}: {len(detections)} objects | Detection: {detect_time*1000:.1f}ms")
+                    if detections:
+                        for det in detections:
+                            print(f"  - {det['label']}: {det['score']}")
+                    last_print_time = current_time
+                
+                frame_id += 1
+                
+            except KeyboardInterrupt:
+                raise
+            except Exception as e:
+                print(f"Error processing frame {frame_id}: {e}")
+                frame_id += 1
+                continue
             
     except KeyboardInterrupt:
         print("\n\nDetection stopped.")
