@@ -173,9 +173,6 @@ def main():
             # Draw detections on the frame
             draw_detections(frame, objects, labels)
             
-            # Display frame
-            vision.display_frame(frame)
-            
             # Print summary every 30 frames
             if frame_id % 30 == 0:
                 print(f"Frame {frame_id}: {len(objects)} objects detected")
