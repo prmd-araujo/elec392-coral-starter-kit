@@ -8,10 +8,10 @@ class UdpDetectionSender:
     def __init__(self, addr=DEFAULT_ADDR):
         self.addr = addr
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Set socket to non-blocking to prevent buffering delays
-        self.sock.setblocking(False)
-        # Reduce send buffer to prevent kernel buffering
+        # Keep socket blocking for reliable localhost delivery
+        # Reduce send buffer to prevent excessive kernel buffering
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 65536)
+        self.dropped_count = 0
 
     def send(self, objects, frame_id):
         msg = {
@@ -21,6 +21,7 @@ class UdpDetectionSender:
         }
         try:
             self.sock.sendto(json.dumps(msg).encode("utf-8"), self.addr)
-        except BlockingIOError:
-            # Socket buffer full, drop this packet (expected for real-time streaming)
-            pass
+        except Exception as e:
+            self.dropped_count += 1
+            if self.dropped_count % 100 == 1:
+                print(f"[WARNING] UDP send error (count={self.dropped_count}): {e}")
