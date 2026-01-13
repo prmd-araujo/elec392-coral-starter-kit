@@ -154,7 +154,8 @@ def main():
     
     try:
         # Run without display (headless mode for UDP transmission)
-        for frame in vision.get_frames(display=False):
+        # Disable mirror to avoid any OpenCV operations that might interact with display
+        for frame in vision.get_frames(display=False, mirror=False):
             try:
                 start_time = time.time()
                 

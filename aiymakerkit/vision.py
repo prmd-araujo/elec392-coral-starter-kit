@@ -418,10 +418,10 @@ def get_frames(title='Camera', size=(640, 480), handle_key=None,
                 frame = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
                 if frame is None:
                     continue
-                if mirror:
-                    frame = cv2.flip(frame, 1)
 
                 if display:
+                    if mirror:
+                        frame = cv2.flip(frame, 1)
                     cv2.imshow(title, frame)
                     key = cv2.waitKey(1)
                     
@@ -434,6 +434,10 @@ def get_frames(title='Camera', size=(640, 480), handle_key=None,
                         break
                 else:
                     # Headless mode - no OpenCV display functions at all
+                    # Still apply mirror flip if requested (no display interaction)
+                    if mirror:
+                        frame = cv2.flip(frame, 1)
+                    
                     if return_key:
                         yield (frame, -1)
                     else:
