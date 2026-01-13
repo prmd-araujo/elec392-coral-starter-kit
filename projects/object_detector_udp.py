@@ -153,6 +153,7 @@ def main():
     last_print_time = time.time()
     last_debug_time = time.time()
     frame_count = 0
+    udp_send_count = 0
     
     try:
         # Run without display (headless mode for UDP transmission)
@@ -164,7 +165,7 @@ def main():
             current_time = time.time()
             if current_time - last_debug_time >= 2.0:
                 fps = frame_count / (current_time - last_debug_time)
-                print(f"[DEBUG] Processing at {fps:.1f} FPS, frame_id={frame_id}")
+                print(f"[DEBUG] Processing at {fps:.1f} FPS, frame_id={frame_id}, UDP sends={udp_send_count}")
                 frame_count = 0
                 last_debug_time = current_time
             
@@ -179,7 +180,11 @@ def main():
                 detections = format_detections(objects, width, height)
                 
                 # Send detections over UDP
-                sender.send(detections, frame_id)
+                try:
+                    sender.send(detections, frame_id)
+                    udp_send_count += 1
+                except Exception as udp_error:
+                    print(f"[ERROR] UDP send failed: {udp_error}")
                 
                 # Print summary every 1 second
                 current_time = time.time()
