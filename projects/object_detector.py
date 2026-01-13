@@ -35,13 +35,14 @@ To use your custom model:
     4. Provide your labels file with the --labels argument
 
 Usage:
-    python projects/object_detector.py [--confidence THRESHOLD] [--model MODEL_PATH] [--labels LABELS_FILE] [--headless]
+    python projects/object_detector.py [--confidence THRESHOLD] [--model MODEL_PATH] [--labels LABELS_FILE] [--headless] [--no-draw]
 
 Args:
     --confidence: Minimum confidence score for detections (0.0-1.0, default: 0.5)
     --model: Path to custom model file (default: built-in SSD MobileNet v2)
     --labels: Path to labels file for custom model (txt file, one label per line)
-    --headless: Run without display (useful for SSH/headless Pi)
+    --headless: Run without display (useful for SSH/headless Pi). Only prints detections.
+    --no-draw: Don't draw bounding boxes on video (useful for Raspberry Pi Connect)
 
 The default TensorFlow model is downloaded if you flashed the AIY Maker Kit
 system image for Raspberry Pi. Otherwise, run download_models.sh in this directory.
@@ -85,6 +86,11 @@ def main():
         "--headless",
         action="store_true",
         help="Run without display (useful for SSH/headless Pi). Only prints detections."
+    )
+    parser.add_argument(
+        "--no-draw",
+        action="store_true",
+        help="Don't draw bounding boxes (useful for Raspberry Pi Connect). Only prints detections."
     )
     args = parser.parse_args()
     
@@ -175,11 +181,12 @@ def main():
                     # Detect objects with specified confidence threshold
                     objects = detector.get_objects(frame, threshold=args.confidence)
                     
-                    # Draw detections using built-in aiymakerkit function
-                    vision.draw_objects(frame, objects, labels=labels, color=(0, 255, 0), thickness=2)
+                    # Draw detections only if --no-draw is not set
+                    if not args.no_draw:
+                        vision.draw_objects(frame, objects, labels=labels, color=(0, 255, 0), thickness=2)
                     
-                    # Print summary every 30 frames
-                    if frame_id % 30 == 0:
+                    # Print summary every 10 frames
+                    if frame_id % 10 == 0:
                         print(f"Frame {frame_id}: {len(objects)} objects detected")
                         for obj in objects:
                             label = labels.get(obj.id, "unknown")
