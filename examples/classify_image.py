@@ -35,6 +35,7 @@ For information about the script options, run:
 For more instructions, see g.co/aiy/maker
 """
 
+import os
 import argparse
 import contextlib
 import select
@@ -47,6 +48,8 @@ from aiymakerkit import vision
 from aiymakerkit.utils import read_labels_from_metadata
 import models
 
+# Preventing QT errors when running without a display
+os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
 @contextlib.contextmanager
 def nonblocking(f):
@@ -113,10 +116,9 @@ def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-m', '--model', default=models.CLASSIFICATION_MODEL,
-                        help='File path of .tflite file. Default is vision.CLASSIFICATION_MODEL')
-    parser.add_argument('-l', '--labels', default=None,
-                        help='File path of labels file. If not specified, ' \
-                        'we get the labels from the model metadata.')
+                        help='File path of .tflite file. Default is models.CLASSIFICATION_MODEL')
+    parser.add_argument('-l', '--labels', default=models.CLASSIFICATION_LABELS,
+                        help='File path of labels file. Default is models.CLASSIFICATION_LABELS')
     parser.add_argument('-i', '--input',
                         help='Image to be classified. If not given, use spacebar to capture and classify an image.')
     args = parser.parse_args()
@@ -126,6 +128,10 @@ def main():
         labels = read_label_file(args.labels)
     else:
         labels = read_labels_from_metadata(args.model)
+
+    print(f"Loaded model: {args.model}")
+    print(f"Loaded {len(labels)} labels")
+    print("Starting classification...\n")
 
     if args.input:
         frame = imread(args.input)

@@ -22,6 +22,8 @@ from examples import models
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+# Preventing QT errors when running without a display
+os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
 def usb_accelerator_connected():
     if subprocess.run(['lsusb', '-d', '18d1:9302'],

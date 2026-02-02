@@ -80,6 +80,8 @@ from time import time
 from pycoral.utils.dataset import read_label_file
 from aiymakerkit import vision
 
+# Preventing QT errors when running without a display
+os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
 @contextlib.contextmanager
 def nonblocking(f):

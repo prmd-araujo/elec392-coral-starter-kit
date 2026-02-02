@@ -30,21 +30,26 @@ For information about the script options, run:
 For more instructions, see g.co/aiy/maker
 """
 
+import os
 import argparse
+import time
+import cv2
 from pycoral.utils.dataset import read_label_file
 from aiymakerkit import vision
 from aiymakerkit.utils import read_labels_from_metadata
 import models
+
+# Preventing QT errors when running without a display
+os.environ['QT_QPA_PLATFORM'] = 'xcb'
 
 
 def main():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-m', '--model', default=models.CLASSIFICATION_MODEL,
-                        help='File path of .tflite file. Default is vision.CLASSIFICATION_MODEL')
-    parser.add_argument('-l', '--labels', default=None,
-                        help='File path of labels file. If not specified, ' \
-                        'we get the labels from the model metadata.')
+                        help='File path of .tflite file. Default is models.CLASSIFICATION_MODEL')
+    parser.add_argument('-l', '--labels', default=models.CLASSIFICATION_LABELS,
+                        help='File path of labels file. Default is models.CLASSIFICATION_LABELS.')
     args = parser.parse_args()
 
     classifier = vision.Classifier(args.model)
@@ -53,12 +58,39 @@ def main():
     else:
         labels = read_labels_from_metadata(args.model)
 
-    for frame in vision.get_frames():
-        classes = classifier.get_classes(frame, top_k=1, threshold=0.3)
+    print(f"Loaded model: {args.model}")
+    print(f"Loaded {len(labels)} labels")
+    print("Starting classification loop...\n")
+
+    frame_count = 0
+    total_processing_time = 0.0
+
+    for frame in vision.get_frames(display=False):
+        start_time = time.time()
+        frame_count += 1
+        
+        classes = classifier.get_classes(frame, top_k=1, threshold=0.2)
         if classes:
             score = classes[0].score
             label = labels.get(classes[0].id)
             vision.draw_label(frame, f'{label}: {round(score, 4)}')
+        
+        # Show the frame after drawing
+        cv2.imshow('Image Classification', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+        
+        # Track processing time
+        frame_time = time.time() - start_time
+        total_processing_time += frame_time
+
+    cv2.destroyAllWindows()
+    print(f"\nProcessed {frame_count} frames total")
+    if frame_count > 0:
+        avg_time = total_processing_time / frame_count
+        fps = 1.0 / avg_time if avg_time > 0 else 0
+        print(f"Average processing time per frame: {avg_time*1000:.2f} ms")
+        print(f"Average FPS: {fps:.2f}")
 
 
 if __name__ == '__main__':
